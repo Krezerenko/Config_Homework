@@ -1,42 +1,51 @@
 
 
 #include "CommandHandler.h"
+#include <zip.h>
 
-void CommandHandler::printError(const string &errorMessage)
+CommandHandler::CommandHandler(int argc, char *argv[])
 {
-    cerr << errorMessage << '\n';
-}
-
-void CommandHandler::pwd()
-{
-    cout << "/home/user" << '\n';
-}
-
-void CommandHandler::ls()
-{
-    // List files
-    vector<string> files = {"file1.txt", "file2.txt", "file3.txt"};
-
-    for (const string &file: files)
+    m_userName = argv[0];
+    m_computerName = argv[1];
+    m_fileSystemImagePath = argv[2];
+    m_logPath = argv[3];
+    if (argc > 5)
     {
-        cout << file << '\n';
+        m_currentPath = argv[4] + m_userName;
+    }
+    else
+    {
+        m_currentPath = "/home/" + m_userName;
     }
 }
 
-void CommandHandler::cat(const string &filename)
+void CommandHandler::log(const QString &message)
 {
-    // Read and display content of the specified file
-    if (filename == "file1.txt")
-    {
-        cout << "Content of file1.txt" << '\n';
-    } else if (filename == "file2.txt")
-    {
-        cout << "Content of file2.txt" << '\n';
-    } else if (filename == "file3.txt")
-    {
-        cout << "Content of file3.txt" << '\n';
-    } else
-    {
-        printError("File not found.");
-    }
+
+}
+
+void CommandHandler::ls(const QString &path)
+{
+
+}
+
+void CommandHandler::cd(const QString &path)
+{
+    m_currentPath = path;
+    OnCurrentPathChanged(path);
+}
+
+void CommandHandler::exit()
+{
+    std::cout << "exit" << '\n';
+}
+
+void CommandHandler::rev(const QString &path)
+{
+
+}
+
+void CommandHandler::history()
+{
+
 }

@@ -4,6 +4,7 @@
 #define HOMEWORK1_MAINWINDOW_H
 
 #include <QMainWindow>
+#include "CommandHandler.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -19,11 +20,18 @@ Q_OBJECT
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent, CommandHandler *cmd);
 
     ~MainWindow() override;
 
+    [[nodiscard]] Ui::MainWindow * GetUi() const;
+
+public slots:
+    void HandleCdButtonPressed();
+
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow *m_ui;
+    CommandHandler *m_cmd;
 };
 
 

@@ -4,21 +4,32 @@
 #define HOMEWORK1_COMMANDHANDLER_H
 
 #include <iostream>
-#include <string>
 #include <vector>
 #include <algorithm>
+#include <QObject>
 
-using namespace std;
-
-class CommandHandler
+class CommandHandler : public QObject
 {
-    string _currentPath;
+
+Q_OBJECT
+
+    QString m_userName;
+    QString m_computerName;
+    QString m_fileSystemImagePath;
+    QString m_logPath;
+
+    QString m_currentPath;
+
+    void log(const QString &message);
 public:
-    // Function
-    void printError(const std::string& errorMessage);
-    void pwd();
-    void ls();
-    void cat(const std::string& filename);
+    CommandHandler(int argc, char *argv[]);
+    void ls(const QString &path);
+    void cd(const QString &path);
+    void exit();
+    void rev(const QString &path);
+    void history();
+signals:
+    void OnCurrentPathChanged(const QString &path);
 };
 
 

@@ -7,12 +7,18 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_PREFIX_PATH "E:/Qt/6.8.0/mingw_64/lib/cmake")
+set(ZLIB_LIBRARY "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\zlib_x64-mingw-dynamic\\lib")
+set(ZLIB_INCLUDE_DIR "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\zlib_x64-mingw-dynamic\\include")
+set(BZIP2_LIBRARIES "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\bzip2_x64-mingw-dynamic\\lib")
+set(BZIP2_INCLUDE_DIR "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\bzip2_x64-mingw-dynamic\\include")
+set(libzip_DIR "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\libzip_x64-mingw-dynamic\\share\\libzip")
 
 find_package(Qt6 COMPONENTS
         Core
         Gui
         Widgets
         REQUIRED)
+find_package(libzip CONFIG REQUIRED)
 
 add_executable(Homework1 main.cpp
         CommandHandler.cpp
@@ -25,6 +31,7 @@ target_link_libraries(Homework1
         Qt::Core
         Qt::Gui
         Qt::Widgets
+        libzip::zip
 )
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
