@@ -7,18 +7,20 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_PREFIX_PATH "E:/Qt/6.8.0/mingw_64/lib/cmake")
-set(ZLIB_LIBRARY "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\zlib_x64-mingw-dynamic\\lib")
-set(ZLIB_INCLUDE_DIR "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\zlib_x64-mingw-dynamic\\include")
-set(BZIP2_LIBRARIES "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\bzip2_x64-mingw-dynamic\\lib")
-set(BZIP2_INCLUDE_DIR "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\bzip2_x64-mingw-dynamic\\include")
-set(libzip_DIR "C:\\Users\\Admin\\.vcpkg-clion\\vcpkg\\packages\\libzip_x64-mingw-dynamic\\share\\libzip")
+list(APPEND CMAKE_PREFIX_PATH "E:/.vcpkg-clion/vcpkg/packages")
+list(APPEND CMAKE_PREFIX_PATH "E:/.vcpkg-clion/vcpkg/packages/bzip2_x64-mingw-dynamic")
+#include("E:\\.vcpkg-clion\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake")
 
 find_package(Qt6 COMPONENTS
         Core
+#        Core5Compat
         Gui
         Widgets
         REQUIRED)
+#find_package(Qt6Core5Compat REQUIRED)
 find_package(libzip CONFIG REQUIRED)
+#find_package(QuaZip-Qt5 REQUIRED)
+#find_package(KF5Archive CONFIG REQUIRED)
 
 add_executable(Homework1 main.cpp
         CommandHandler.cpp
@@ -27,7 +29,7 @@ add_executable(Homework1 main.cpp
         mainwindow.h
         mainwindow.ui
 )
-target_link_libraries(Homework1
+target_link_libraries(Homework1 PRIVATE
         Qt::Core
         Qt::Gui
         Qt::Widgets

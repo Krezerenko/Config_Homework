@@ -24,5 +24,6 @@ int main(int argc, char *argv[])
     QObject::connect(w.GetUi()->btnGoToFolder, &QPushButton::clicked, &w, &MainWindow::HandleCdButtonPressed);
     QObject::connect(&cmd, &CommandHandler::OnCurrentPathChanged, w.GetUi()->txtCurrentFolder, &QLineEdit::setText);
     w.show();
+    cmd.InitUi();
     return a.exec();
 }
