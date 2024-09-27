@@ -1,7 +1,9 @@
 
 
 #include "CommandHandler.h"
-#include <zip.h>
+//#include <zip.h>
+#include <minizip/zip.h>
+#include <minizip/unzip.h>
 #include <QRegularExpression>
 
 CommandHandler::CommandHandler(int argc, char *argv[])
@@ -10,21 +12,19 @@ CommandHandler::CommandHandler(int argc, char *argv[])
     m_computerName = argv[2];
 
     m_fileSystemImagePath = argv[3];
-    int* errcode = new int;
-    *errcode = 0;
-    m_zipArchive = zip_open(m_fileSystemImagePath.toStdString().c_str(), 0, errcode);
-    if (*errcode != 0)
+    m_zipArchive = zipOpen(m_fileSystemImagePath.toStdString().c_str(), APPEND_STATUS_ADDINZIP);
+    m_unzZipArchive = unzOpen(m_fileSystemImagePath.toStdString().c_str());
+    if (m_zipArchive == nullptr)
     {
-        std::cerr << "Couldn't open system image archive.\n"
-                     "Error code: " << zip_strerror(m_zipArchive) << '\n';
-        delete errcode;
+        std::cerr << "Couldn't open system image archive.\n";
         exit();
         return;
     }
-    delete errcode;
 
     m_logPath = argv[4];
     m_logFile = std::fstream();
+
+    m_cmdLogPath = "var/log/cmdlog.txt";
 
     if (argc > 5)
     {
@@ -34,16 +34,43 @@ CommandHandler::CommandHandler(int argc, char *argv[])
     {
         m_homePath = "home/" + m_userName + '/';
     }
-    if (zip_name_locate(m_zipArchive, m_homePath.toStdString().c_str(), 0) < 0)
+    zip_fileinfo zipInfo;
+    if (!CheckPathExists(m_homePath))
     {
-        zip_dir_add(m_zipArchive, m_homePath.toStdString().c_str(), 0);
+        zipOpenNewFileInZip(m_zipArchive, m_homePath.toStdString().c_str(), &zipInfo, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION);
     }
     m_currentPath = m_homePath;
 }
 
+bool CommandHandler::CheckPathExists(const QString &path) const
+{
+    if (unzGoToFirstFile(m_unzZipArchive) != UNZ_OK)
+    {
+        return false;
+    }
+    do
+    {
+        char filenameInZip[256];
+        unz_file_info fileInfo;
+
+        if (unzGetCurrentFileInfo(m_unzZipArchive, &fileInfo, filenameInZip, sizeof(filenameInZip), nullptr, 0, nullptr, 0) != UNZ_OK)
+        {
+            continue;
+        }
+
+        if (QString(filenameInZip) == path)
+        {
+            return true;
+        }
+    }
+    while (unzGoToNextFile(m_unzZipArchive) == UNZ_OK);
+    return false;
+}
+
 CommandHandler::~CommandHandler()
 {
-    zip_close(m_zipArchive);
+    zipClose(m_zipArchive, nullptr);
+    unzClose(m_unzZipArchive);
     m_logFile.close();
 }
 
@@ -69,17 +96,6 @@ QString CommandHandler::ToZipPath(const QString &path)
     {
         return "";
     }
-    if (path == ".")
-    {
-        return m_currentPath;
-    }
-    if (path == "..")
-    {
-        QString parentPath = m_currentPath;
-        parentPath.replace(QRegularExpression("[^/]*/$", QRegularExpression::MultilineOption), "");
-        std::cout << parentPath.toStdString() << '\n';
-        return ToZipPath('/' + parentPath);
-    }
 
     QString finalPath;
     if (path[0] == '/')
@@ -96,11 +112,25 @@ QString CommandHandler::ToZipPath(const QString &path)
     {
         finalPath += '/';
     }
+    if (finalPath.contains(".."))
+    {
+        auto regexp = QRegularExpression("([^/]*/)?\\.\\./", QRegularExpression::MultilineOption);
+        auto match = regexp.match(finalPath);
+        if (match.hasCaptured(0))
+        {
+            finalPath.replace(match.capturedStart(), match.capturedLength(), "");
+            return ToZipPath('/' + finalPath);
+        }
+    }
+    if (path.contains('.'))
+    {
+        finalPath.replace(QRegularExpression("(?<=(^|/))\\./", QRegularExpression::MultilineOption), "");
+    }
 
     return finalPath;
 }
 
-void CommandHandler::log(const QString &message)
+void CommandHandler::Log(const QString &message)
 {
     std::cout << message.toStdString() << '\n';
 
@@ -109,14 +139,48 @@ void CommandHandler::log(const QString &message)
     m_logFile.close();
 }
 
+void CommandHandler::CmdLog(const QString &cmd)
+{
+//    ZIP_ER_INVAL
+//    EINPROGRESS
+//    zip_file *cmdLogFileR = zip_fopen(m_zipArchive, m_cmdLogPath.toStdString().c_str(), 0);
+//    char* buffer = new char[1024];
+//    unsigned int readBytes = zip_fread(cmdLogFileR, buffer, 1024);
+//    zip_source_t *cmdLogFile = zip_source_buffer(m_zipArchive, buffer, readBytes, 0);
+//    delete[] buffer;
+//    zip_fclose(cmdLogFileR);
+//    std::cerr << zip_get_error(m_zipArchive)->zip_err << '\n';
+//    zip_source_begin_write_cloning(cmdLogFile, readBytes);
+//    zip_source_write(cmdLogFile, (cmd + '\n').toStdString().c_str(), cmd.size() + 1);
+//    zip_source_commit_write(cmdLogFile);
+//    zip_file_add(m_zipArchive, m_cmdLogPath.toStdString().c_str(), cmdLogFile, ZIP_FL_OVERWRITE);
+//    zip_source_close(cmdLogFile);
+//    zip_source_free(cmdLogFile);
+}
+
 void CommandHandler::ls(const QString &path)
 {
-    for (int i = 0; i < zip_get_num_entries(m_zipArchive, 0); ++i)
+    CmdLog("ls " + path);
+    QString wd = path == "" ? m_currentPath : ToZipPath(path);
+    if (unzGoToFirstFile(m_unzZipArchive) != UNZ_OK)
     {
-        QString name = zip_get_name(m_zipArchive, i, 0);
-        QString wd = path == "" ? m_currentPath : ToZipPath(path);
-        if (!name.startsWith(wd)) continue;
+        return;
+    }
+    do
+    {
+        char cName[256];
+        unz_file_info fileInfo;
 
+        if (unzGetCurrentFileInfo(m_unzZipArchive, &fileInfo, cName, sizeof(cName), nullptr, 0, nullptr, 0) != UNZ_OK)
+        {
+            return;
+        }
+
+        QString name = cName;
+        if (!name.startsWith(wd)) continue;
+        if (name == wd) continue;
+
+//        std::cout << wd.toStdString() << ' ' << name.toStdString() << '\n';
         name.replace(wd, "");
         if (name.back() == '/')
         {
@@ -126,33 +190,35 @@ void CommandHandler::ls(const QString &path)
 
         std::cout << name.toStdString() << '\n';
     }
+    while (unzGoToNextFile(m_unzZipArchive) == UNZ_OK);
 }
 
 void CommandHandler::cd(const QString &path)
 {
+    CmdLog("cd " + path);
     QString zipPath = ToZipPath(path);
-    if (zipPath != "" && zip_name_locate(m_zipArchive, zipPath.toStdString().c_str(), 0) < 0)
+    if (zipPath != "" && !CheckPathExists(zipPath))
     {
-        log("Can not change directory. No directory found.");
+        Log("Can not change directory. No directory found.");
         return;
     }
-    log("Changed location to folder /" + zipPath);
+    Log("Changed location to folder /" + zipPath);
     SetCurrentPath(zipPath);
 }
 
 void CommandHandler::exit()
 {
-//    zip_close(m_zipArchive);
+    CmdLog("exit");
     std::cout << "exit" << '\n';
     ::exit(0);
 }
 
 void CommandHandler::rev(const QString &path)
 {
-
+    CmdLog("rev " + path);
 }
 
 void CommandHandler::history()
 {
-
+    CmdLog("history");
 }

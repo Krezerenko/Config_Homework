@@ -28,6 +28,7 @@ public:
 
 public slots:
     void HandleCdButtonPressed();
+    void HandleLsButtonPressed();
 
 private:
     Ui::MainWindow *m_ui;

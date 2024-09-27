@@ -6,8 +6,9 @@
 #include <iostream>
 #include <fstream>
 #include <QObject>
-#include <zip.h>
+//#include <zip.h>
 #include <QString>
+#include <minizip/zip.h>
 
 class CommandHandler : public QObject
 {
@@ -21,12 +22,15 @@ Q_OBJECT
 
     std::fstream m_logFile;
 
-    zip* m_zipArchive;
+    zipFile m_zipArchive;
+    zipFile m_unzZipArchive;
     QString m_currentPath;
     QString m_cmdLogPath;
     QString m_homePath;
 
-    void log(const QString &message);
+    void Log(const QString &message);
+    void CmdLog(const QString &cmd);
+    bool CheckPathExists(const QString &path) const;
     QString ToZipPath(const QString &path);
 public:
     CommandHandler(int argc, char *argv[]);
@@ -41,6 +45,7 @@ public:
     void history();
 signals:
     void OnCurrentPathChanged(const QString &path);
+
 };
 
 

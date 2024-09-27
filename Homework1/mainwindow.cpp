@@ -31,5 +31,10 @@ Ui::MainWindow *MainWindow::GetUi() const
 
 void MainWindow::HandleCdButtonPressed()
 {
-    m_cmd->cd(m_ui->txtInputFolderPath->text());
+    m_cmd->cd(m_ui->txtCdFolderPath->text());
+}
+
+void MainWindow::HandleLsButtonPressed()
+{
+    m_cmd->ls(m_ui->txtLsFolderPath->text());
 }
