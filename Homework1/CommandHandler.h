@@ -17,24 +17,25 @@ Q_OBJECT
 
     QString m_userName;
     QString m_computerName;
-    QString m_fileSystemImagePath;
+    QString m_zipPath;
     QString m_logPath;
 
     std::fstream m_logFile;
 
-    zipFile m_zipArchive;
-    zipFile m_unzZipArchive;
+    zipFile m_zipWrite;
+    zipFile m_zipRead;
     QString m_currentPath;
     QString m_cmdLogPath;
     QString m_homePath;
 
     void Log(const QString &message);
     void CmdLog(const QString &cmd);
-    bool CheckPathExists(const QString &path) const;
-    QString ToZipPath(const QString &path);
+    bool CheckPathExists(const QString &path);
+    QString ToZipPath(const QString &path) const;
 public:
     CommandHandler(int argc, char *argv[]);
     ~CommandHandler() override;
+    void CleanUp();
     void InitUi();
     void SetCurrentPath(const QString& path);
 

@@ -1,12 +1,13 @@
 #include "mainwindow.h"
-#include "CommandHandler.h"
-#include <iostream>
-
-#include <QApplication>
 #include "ui_mainwindow.h"
+#include "CommandHandler.h"
+#include "ZipHandler.h"
+#include <QApplication>
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
+    srand(time(nullptr));
     if (argc < 5)
     {
         std::cerr << "Wrong amount of arguments.\n"
@@ -19,13 +20,16 @@ int main(int argc, char *argv[])
         return 1;
     }
     QApplication a(argc, argv);
-    CommandHandler cmd(argc, argv);
-    MainWindow w(nullptr, &cmd);
+    ZipHandler zip(argv[3]);
+    std::cout << zip.m_Unzip().toStdString() + '\n';
+//    CommandHandler cmd(argc, argv);
+    MainWindow w;
     auto ui = w.GetUi();
-    QObject::connect(ui->btnCd, &QPushButton::clicked, &w, &MainWindow::HandleCdButtonPressed);
-    QObject::connect(&cmd, &CommandHandler::OnCurrentPathChanged, ui->txtCurrentFolder, &QLineEdit::setText);
-    QObject::connect(ui->btnLs, &QPushButton::clicked, &w, &MainWindow::HandleLsButtonPressed);
+//    QObject::connect(ui->btnCd, &QPushButton::clicked, &w, &MainWindow::HandleCdButtonPressed);
+//    QObject::connect(&cmd, &CommandHandler::OnCurrentPathChanged, ui->txtCurrentFolder, &QLineEdit::setText);
+//    QObject::connect(ui->btnLs, &QPushButton::clicked, &w, &MainWindow::HandleLsButtonPressed);
+//    QObject::connect(&a, &QApplication::aboutToQuit, &cmd, &CommandHandler::CleanUp);
     w.show();
-    cmd.InitUi();
+//    cmd.InitUi();
     return a.exec();
 }
