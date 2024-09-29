@@ -3,26 +3,32 @@
 #ifndef HOMEWORK1_ZIPHANDLER_H
 #define HOMEWORK1_ZIPHANDLER_H
 
-#include <QString>
+
 #include <fstream>
-#include <minizip/zip.h>
 #include <minizip/unzip.h>
+#include <minizip/zip.h>
+#include <QString>
 
 
 class ZipHandler
 {
-
+private:
     static constexpr unsigned int NameLenSize = sizeof(unsigned int);
     static constexpr unsigned int FileLenSize = sizeof(unsigned long);
+
+    class Zipper;
+    class Unzipper;
+
+    Unzipper *m_pUnzipper;
+    Zipper *m_pZipper;
 
     bool m_noErrors;
     QString m_zipPath;
     QString m_zipCopyPath;
     QString m_unzipPath;
+
     static QString m_GenerateTempFileName();
-    bool m_ApplyChanges();
 public:
-    QString m_Unzip();
     explicit ZipHandler(const QString &zipPath);
     ~ZipHandler();
     bool FindFile(const QString &path);

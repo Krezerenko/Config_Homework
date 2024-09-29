@@ -34,6 +34,10 @@ add_executable(Homework1 main.cpp
         mainwindow.ui
         ZipHandler.cpp
         ZipHandler.h
+        Zipper.cpp
+        Zipper.h
+        Unzipper.cpp
+        Unzipper.h
 )
 target_link_libraries(Homework1 PRIVATE
         Qt::Core

@@ -21,7 +21,8 @@ int main(int argc, char *argv[])
     }
     QApplication a(argc, argv);
     ZipHandler zip(argv[3]);
-    std::cout << zip.m_Unzip().toStdString() + '\n';
+    std::cout << zip.WriteToFile() << '\n';
+//    std::cout << zip.Unzip().toStdString() + '\n';
 //    CommandHandler cmd(argc, argv);
     MainWindow w;
     auto ui = w.GetUi();
