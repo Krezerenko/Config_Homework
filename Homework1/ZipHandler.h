@@ -33,11 +33,11 @@ private:
     void m_RemoveFiles();
 public:
     explicit ZipHandler(const QString &zipPath);
-//    ZipHandler();
     ~ZipHandler();
     bool OpenArchive(const QString &zipPath);
-    bool FindFile(const QString &path);
+    bool FindFile(const QString &filePath);
     bool GetFilesInDirectory(const QString &directoryPath, std::vector<QString> &buffer);
+    QString ReadFile(const QString &filePath);
     bool WriteToFile(const QString &fileName, const QString &data);
     bool AddFile(const QString &fileName);
 };

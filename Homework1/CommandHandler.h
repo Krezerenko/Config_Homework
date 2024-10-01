@@ -7,6 +7,7 @@
 #include <fstream>
 #include <QObject>
 #include "ZipHandler.h"
+#include "mainwindow.h"
 #include <QString>
 
 class CommandHandler : public QObject
@@ -31,19 +32,24 @@ Q_OBJECT
     QString ToZipPath(const QString &path) const;
 public:
     CommandHandler(int argc, char *argv[]);
-    ~CommandHandler() override;
-    void CleanUp();
     void InitUi();
     void SetCurrentPath(const QString& path);
 
-    void ls(const QString &path);
+    QString ls(const QString &path);
     void cd(const QString &path);
-    void exit();
-    void rev(const QString &path);
+    void rev(const QString &filePath);
     void history();
-signals:
-    void OnCurrentPathChanged(const QString &path);
 
+public slots:
+    void exit();
+    void HandleLsButtonPressed(const QString &inputPath);
+    void HandleCdButtonPressed(const QString &inputPath);
+    void HandleHistoryButtonPressed();
+    void HandleRevButtonPressed(const QString &inputPath);
+
+signals:
+    void OnCurrentPathChanged(const QString &newPath);
+    void OnOutput(const QString &output);
 };
 
 

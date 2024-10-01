@@ -98,7 +98,7 @@ bool ZipHandler::Unzipper::m_GoToFirstFile()
     {
         std::cerr << errorCode << ": Failed to locate first file in archive.\n";
         m_Close();
-        m_noErrors = false;
+//        m_noErrors = false;
         return false;
     }
     return true;
@@ -226,17 +226,6 @@ int ZipHandler::Unzipper::m_ReadCurrentFile(char *fileBuffer, unsigned int fileB
     return filePortionSize;
 }
 
-void ZipHandler::Unzipper::RemoveFiles()
-{
-    if (!m_unzipPath.isEmpty())
-    {
-        m_Close();
-        QFile file(m_unzipPath);
-        file.remove();
-        m_unzipPath = "";
-    }
-}
-
 QString ZipHandler::Unzipper::Unzip()
 {
     if (!m_noErrors) return "";
@@ -266,14 +255,20 @@ QString ZipHandler::Unzipper::Unzip()
 
     if (!m_GoToFirstFile())
     {
+        unsigned int temp = 0;
+        unzipFile.write(reinterpret_cast<char*>(&temp), sizeof(temp));
+        unzipFile.write(".", 1);
+        unzipFile.write(reinterpret_cast<char*>(&temp), sizeof(temp));
+        m_Close();
         unzipFile.close();
-        return "";
+        return m_unzipPath;
     }
     unz_file_info fileInfo;
     do
     {
         if (!m_GetCurrentFileInfo(&fileInfo, nameBuffer, nameBufferSize))
         {
+            m_Close();
             unzipFile.close();
             return "";
         }
@@ -284,6 +279,7 @@ QString ZipHandler::Unzipper::Unzip()
 
         if (!m_OpenCurrentFile())
         {
+            m_Close();
             unzipFile.close();
             return "";
         }
@@ -309,7 +305,7 @@ QString ZipHandler::Unzipper::Unzip()
     return unzipFile.fileName();
 }
 
-bool ZipHandler::Unzipper::FindFile(const QString &path)
+bool ZipHandler::Unzipper::FindFile(const QString &filePath)
 {
     if (!m_noErrors) return false;
     if (!m_zipIsOpen)
@@ -328,7 +324,7 @@ bool ZipHandler::Unzipper::FindFile(const QString &path)
         {
             return false;
         }
-        if (QString(nameBuffer) == path)
+        if (QString::fromLatin1(nameBuffer) == filePath)
         {
             return true;
         }
@@ -355,7 +351,7 @@ bool ZipHandler::Unzipper::GetFilesInDirectory(const QString &directoryPath, std
         {
             return false;
         }
-        name = QString(nameBuffer);
+        name = QString::fromLatin1(nameBuffer);
         if (!name.startsWith(directoryPath)) continue;
         if (name == directoryPath) continue;
 
@@ -370,4 +366,63 @@ bool ZipHandler::Unzipper::GetFilesInDirectory(const QString &directoryPath, std
     while (m_GoToNextFile());
     m_Close();
     return true;
+}
+
+QString ZipHandler::Unzipper::ReadFile(const QString &filePath)
+{
+    if (!m_noErrors) return "";
+    if (!m_Open(m_zipPath)) return "";
+
+    constexpr unsigned int nameBufferSize = 1024;
+    char nameBuffer[nameBufferSize];
+
+    if (!m_GoToFirstFile()) return "";
+    unz_file_info fileInfo;
+    QString name;
+    do
+    {
+        if (!m_GetCurrentFileInfo(&fileInfo, nameBuffer, nameBufferSize))
+        {
+            return "";
+        }
+
+        name = QString::fromLatin1(nameBuffer);
+        if (name != filePath) continue;
+
+        constexpr unsigned int fileBufferSize = 1024 * 8;
+        int filePortionSize;
+        char fileBuffer[fileBufferSize];
+        QString fileData;
+        if (!m_OpenCurrentFile()) return "";
+
+        do
+        {
+            filePortionSize = m_ReadCurrentFile(fileBuffer, fileBufferSize);
+            if (filePortionSize < 0)
+            {
+                return fileData;
+            }
+
+            fileData += QString::fromLatin1(fileBuffer, filePortionSize);
+        }
+        while (filePortionSize > 0);
+
+        m_CloseCurrentFile();
+        return fileData;
+    }
+    while (m_GoToNextFile());
+
+    m_Close();
+    return "";
+}
+
+void ZipHandler::Unzipper::RemoveFiles()
+{
+    if (!m_unzipPath.isEmpty())
+    {
+        m_Close();
+        QFile file(m_unzipPath);
+        file.remove();
+        m_unzipPath = "";
+    }
 }

@@ -30,8 +30,9 @@ public:
     ~Unzipper();
 
     QString Unzip();
-    bool FindFile(const QString &path);
+    bool FindFile(const QString &filePath);
     bool GetFilesInDirectory(const QString &directoryPath, std::vector<QString> &buffer);
+    QString ReadFile(const QString &filePath);
     void RemoveFiles();
 };
 

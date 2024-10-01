@@ -20,7 +20,6 @@ Q_OBJECT
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    explicit MainWindow(QWidget *parent, CommandHandler *cmd);
 
     ~MainWindow() override;
 
@@ -29,10 +28,18 @@ public:
 public slots:
     void HandleCdButtonPressed();
     void HandleLsButtonPressed();
+    void HandleHistoryButtonPressed();
+    void HandleRevButtonPressed();
+
+signals:
+    void OnCdButtonPressed(const QString &inputPath);
+    void OnLsButtonPressed(const QString &inputPath);
+    void OnHistoryButtonPressed();
+    void OnRevButtonPressed(const QString &inputPath);
 
 private:
     Ui::MainWindow *m_ui;
-    CommandHandler *m_cmd;
+//    CommandHandler *m_cmd;
 };
 
 

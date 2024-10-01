@@ -4,7 +4,7 @@
 #include "ZipHandler.h"
 #include <QRegularExpression>
 
-CommandHandler::CommandHandler(int argc, char *argv[]) : m_zip(QString(argv[3]))
+CommandHandler::CommandHandler(int argc, char *argv[]) : m_zip(QString::fromLatin1(argv[3]))
 {
     m_userName = argv[1];
     m_computerName = argv[2];
@@ -13,6 +13,7 @@ CommandHandler::CommandHandler(int argc, char *argv[]) : m_zip(QString(argv[3]))
     m_logFile = std::fstream();
 
     m_cmdLogPath = "var/log/cmdlog.txt";
+    m_zip.AddFile(m_cmdLogPath);
 
     if (argc > 5)
     {
@@ -29,22 +30,6 @@ CommandHandler::CommandHandler(int argc, char *argv[]) : m_zip(QString(argv[3]))
     m_currentPath = m_homePath;
 }
 
-CommandHandler::~CommandHandler()
-{
-    CleanUp();
-}
-
-void CommandHandler::CleanUp()
-{
-//    if (m_zipWrite != nullptr)
-//        zipClose(m_zipWrite, nullptr);
-//    if (m_zipRead != nullptr)
-//        unzClose(m_zipRead);
-//    m_zipWrite = nullptr;
-//    m_zipRead = nullptr;
-//    m_logFile.close();
-}
-
 
 void CommandHandler::InitUi()
 {
@@ -54,7 +39,7 @@ void CommandHandler::InitUi()
 void CommandHandler::SetCurrentPath(const QString &path)
 {
     m_currentPath = path;
-    OnCurrentPathChanged('/' + m_currentPath);
+    emit OnCurrentPathChanged('/' + m_currentPath);
 }
 
 QString CommandHandler::ToZipPath(const QString &path) const
@@ -122,17 +107,21 @@ void CommandHandler::CmdLog(const QString &cmd)
     m_zip.WriteToFile(m_cmdLogPath, cmd + '\n');
 }
 
-void CommandHandler::ls(const QString &path)
+QString CommandHandler::ls(const QString &path)
 {
     CmdLog("ls " + path);
 
+    QString zipPath = path == "" ? m_currentPath : ToZipPath(path);
     std::vector<QString> names;
     names.reserve(10);
-    m_zip.GetFilesInDirectory(ToZipPath(path), names);
+    m_zip.GetFilesInDirectory(zipPath, names);
+    QString output;
     for (const QString& name : names)
     {
         std::cout << name.toStdString() << '\n';
+        output += name + '\n';
     }
+    return output;
 }
 
 void CommandHandler::cd(const QString &path)
@@ -154,12 +143,60 @@ void CommandHandler::exit()
     ::exit(0);
 }
 
-void CommandHandler::rev(const QString &path)
-{
-    CmdLog("rev " + path);
-}
-
 void CommandHandler::history()
 {
     CmdLog("history");
+    QString history = m_zip.ReadFile(m_cmdLogPath);
+    OnOutput(history);
+}
+
+void CommandHandler::rev(const QString &filePath)
+{
+    CmdLog("rev " + filePath);
+    QString zipPath = ToZipPath(filePath);
+    if (filePath == "" || filePath.back() == '/' && m_zip.FindFile(zipPath))
+    {
+        Log("Rev failed: \"" + zipPath + "\" is not a file.");
+        return;
+    }
+    if (!m_zip.FindFile(zipPath.removeLast()))
+    {
+        Log("Rev failed: \"" + zipPath + "\" - file not found.");
+        return;
+    }
+    QString data = m_zip.ReadFile(zipPath);
+    if (data.size() == 0)
+    {
+        emit OnOutput("");
+        return;
+    }
+    QString reversed;
+    reversed.resize(data.size());
+    for (int i = 0; i < data.size(); ++i)
+    {
+        reversed[i] = data[data.size() - 1 - i];
+    }
+    emit OnOutput(reversed);
+}
+
+
+void CommandHandler::HandleLsButtonPressed(const QString &inputPath)
+{
+    QString names = ls(inputPath);
+    emit OnOutput(names);
+}
+
+void CommandHandler::HandleCdButtonPressed(const QString &inputPath)
+{
+    cd(inputPath);
+}
+
+void CommandHandler::HandleHistoryButtonPressed()
+{
+    history();
+}
+
+void CommandHandler::HandleRevButtonPressed(const QString &inputPath)
+{
+    rev(inputPath);
 }

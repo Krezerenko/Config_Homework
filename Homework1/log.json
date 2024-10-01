@@ -130,3 +130,13 @@ Can not change working directory. "home/" - directory does not exist.
 Changed location to folder /
 Changed location to folder /home/
 Changed location to folder /var/
+Changed location to folder /
+Changed location to folder /var/log/
+Rev failed: "var/log/cmdlog.txt/" - file not found.
+Changed location to folder /home/krezon/
+Changed location to folder /
+Changed location to folder /
+Changed location to folder /
+Changed location to folder /
+Rev failed: "home/krezon/" is not a file.
+Rev failed: "" - file not found.

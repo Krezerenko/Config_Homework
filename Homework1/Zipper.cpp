@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <QFile>
+#include <QRegularExpression>
 
 ZipHandler::Zipper::Zipper()
 {
@@ -207,6 +208,10 @@ bool ZipHandler::Zipper::m_FillCurrentZip(QFile &source)
     do
     {
         source.read(reinterpret_cast<char*>(&nameSize), NameLenSize);
+        if (nameSize == 0)
+        {
+            return true;
+        }
         source.read(nameBuffer, nameSize);
         name = QString::fromLatin1(nameBuffer, nameSize);
 
@@ -231,6 +236,10 @@ bool ZipHandler::Zipper::m_FillCurrentZipExceptFile(QFile &source, const QString
     do
     {
         source.read(reinterpret_cast<char*>(&nameSize), NameLenSize);
+        if (nameSize == 0)
+        {
+            return true;
+        }
         source.read(nameBuffer, nameSize);
         name = QString::fromLatin1(nameBuffer, nameSize);
 
@@ -263,6 +272,10 @@ bool ZipHandler::Zipper::m_FillCurrentZipAndAppendToFile(QFile &source, const QS
     do
     {
         source.read(reinterpret_cast<char*>(&nameSize), NameLenSize);
+        if (nameSize == 0)
+        {
+            return true;
+        }
         source.read(nameBuffer, nameSize);
         name = QString::fromLatin1(nameBuffer, nameSize);
 
@@ -351,6 +364,22 @@ QString ZipHandler::Zipper::ZipAddNewFileRaw(const QString &unzipPath, const QSt
     m_CloseCurrentFile();
 
     m_Close();
+    return m_zipCopyPath;
+}
+
+QString ZipHandler::Zipper::ZipAddFileNoCheck(const QString &fileName, const char *fileData, unsigned int fileSize)
+{
+    m_OpenExisting(m_zipCopyPath);
+
+    m_OpenNewFile(fileName);
+    if (fileData != nullptr && fileSize > 0)
+    {
+        m_WriteInCurrentFile(fileData, fileSize);
+    }
+    m_CloseCurrentFile();
+
+    m_Close();
+
     return m_zipCopyPath;
 }
 

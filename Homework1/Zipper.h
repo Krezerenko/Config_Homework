@@ -37,6 +37,7 @@ public:
 
     QString ZipNoChange(const QString &unzipPath);
     QString ZipAddNewFileRaw(const QString &unzipPath, const QString &fileName, const char *fileData, unsigned int fileSize);
+    QString ZipAddFileNoCheck(const QString &fileName, const char *fileData, unsigned int fileSize);
     QString ZipWriteToFileRaw(const QString &unzipPath, const QString &fileName, const char* fileData, unsigned int fileSize);
     QString ZipRemoveFile(const QString &unzipPath, const QString &fileName);
     void RemoveFiles();

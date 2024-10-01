@@ -8,6 +8,7 @@
 #include <random>
 #include <QString>
 #include <iostream>
+#include <QRegularExpression>
 
 ZipHandler::ZipHandler(const QString &zipPath)
 {
@@ -92,14 +93,19 @@ bool ZipHandler::OpenArchive(const QString &zipPath)
     return true;
 }
 
-bool ZipHandler::FindFile(const QString &path)
+bool ZipHandler::FindFile(const QString &filePath)
 {
-    return m_pUnzipper->FindFile(path);
+    return m_pUnzipper->FindFile(filePath);
 }
 
 bool ZipHandler::GetFilesInDirectory(const QString &directoryPath, std::vector<QString> &buffer)
 {
     return m_pUnzipper->GetFilesInDirectory(directoryPath, buffer);
+}
+
+QString ZipHandler::ReadFile(const QString &filePath)
+{
+    return m_pUnzipper->ReadFile(filePath);
 }
 
 bool ZipHandler::WriteToFile(const QString &fileName, const QString &data)
@@ -123,10 +129,25 @@ bool ZipHandler::AddFile(const QString &fileName)
 {
     m_unzipPath = m_pUnzipper->Unzip();
     m_noErrors = m_unzipPath != "";
-    if (m_pUnzipper->FindFile(fileName)) return true;
+    if (!m_noErrors) return false;
 
-    m_zipCopyPath = m_pZipper->ZipAddNewFileRaw(m_unzipPath, fileName, nullptr, 0);
+    m_zipCopyPath = m_pZipper->ZipNoChange(m_unzipPath);
     m_noErrors = m_zipCopyPath != "";
+    if (!m_noErrors) return false;
+//    m_ReplaceOriginal();
+//    return m_noErrors;
+
+    QString parentPath = fileName;
+    if (parentPath.back() != '/') parentPath += '/';
+    static QRegularExpression regexp("[^/]*/$", QRegularExpression::MultilineOption);
+    while (parentPath != "")
+    {
+        if (!m_pUnzipper->FindFile(parentPath))
+        {
+            m_pZipper->ZipAddFileNoCheck(parentPath, nullptr, 0);
+        }
+        parentPath.replace(regexp, "");
+    }
     m_ReplaceOriginal();
     return m_noErrors;
 }

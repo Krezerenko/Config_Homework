@@ -11,13 +11,13 @@ MainWindow::MainWindow(QWidget *parent) :
         QMainWindow(parent), m_ui(new Ui::MainWindow)
 {
     m_ui->setupUi(this);
-    m_cmd = nullptr;
+//    m_cmd = nullptr;
 }
 
-MainWindow::MainWindow(QWidget *parent, CommandHandler *cmd) : MainWindow(parent)
-{
-    m_cmd = cmd;
-}
+//MainWindow::MainWindow(QWidget *parent, CommandHandler *cmd) : MainWindow(parent)
+//{
+//    m_cmd = cmd;
+//}
 
 MainWindow::~MainWindow()
 {
@@ -31,10 +31,20 @@ Ui::MainWindow *MainWindow::GetUi() const
 
 void MainWindow::HandleCdButtonPressed()
 {
-    m_cmd->cd(m_ui->txtCdFolderPath->text());
+    emit OnCdButtonPressed(m_ui->txtCdFolderPath->text());
 }
 
 void MainWindow::HandleLsButtonPressed()
 {
-    m_cmd->ls(m_ui->txtLsFolderPath->text());
+    emit OnLsButtonPressed(m_ui->txtLsFolderPath->text());
+}
+
+void MainWindow::HandleHistoryButtonPressed()
+{
+    emit OnHistoryButtonPressed();
+}
+
+void MainWindow::HandleRevButtonPressed()
+{
+    emit OnRevButtonPressed(m_ui->txtRevFilePath->text());
 }
