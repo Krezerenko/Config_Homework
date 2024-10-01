@@ -4,10 +4,11 @@
 #define HOMEWORK1_ZIPHANDLER_H
 
 
-#include <fstream>
+//#include <fstream>
 #include <minizip/unzip.h>
 #include <minizip/zip.h>
 #include <QString>
+#include <vector>
 
 
 class ZipHandler
@@ -28,11 +29,17 @@ private:
     QString m_unzipPath;
 
     static QString m_GenerateTempFileName();
+    void m_ReplaceOriginal();
+    void m_RemoveFiles();
 public:
     explicit ZipHandler(const QString &zipPath);
+//    ZipHandler();
     ~ZipHandler();
+    bool OpenArchive(const QString &zipPath);
     bool FindFile(const QString &path);
-    bool WriteToFile();
+    bool GetFilesInDirectory(const QString &directoryPath, std::vector<QString> &buffer);
+    bool WriteToFile(const QString &fileName, const QString &data);
+    bool AddFile(const QString &fileName);
 };
 
 

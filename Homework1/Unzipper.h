@@ -24,13 +24,15 @@ class ZipHandler::Unzipper
     bool m_CloseCurrentFile();
     int m_ReadCurrentFile(char* fileBuffer, unsigned int fileBufferSize);
 
-    void m_RemoveFiles();
 public:
     explicit Unzipper(const QString &zipPath);
+    Unzipper();
     ~Unzipper();
 
     QString Unzip();
     bool FindFile(const QString &path);
+    bool GetFilesInDirectory(const QString &directoryPath, std::vector<QString> &buffer);
+    void RemoveFiles();
 };
 
 

@@ -11,6 +11,7 @@ ZipHandler::Unzipper::Unzipper(const QString &zipPath)
     m_zipIsOpen = false;
     m_zipFileIsOpen = false;
     m_noErrors = true;
+    m_unzipPath = "";
     zipFile tempZip = zipOpen(zipPath.toStdString().c_str(), APPEND_STATUS_ADDINZIP);
     if (tempZip == nullptr)
     {
@@ -22,10 +23,20 @@ ZipHandler::Unzipper::Unzipper(const QString &zipPath)
     zipClose(tempZip, nullptr);
 }
 
+ZipHandler::Unzipper::Unzipper()
+{
+    m_currentZip = nullptr;
+    m_zipIsOpen = false;
+    m_zipFileIsOpen = false;
+    m_noErrors = false;
+    m_unzipPath = "";
+    m_zipPath = "";
+}
+
 ZipHandler::Unzipper::~Unzipper()
 {
     m_Close();
-    m_RemoveFiles();
+    RemoveFiles();
 }
 
 bool ZipHandler::Unzipper::m_Open(const QString &zipPath)
@@ -215,10 +226,11 @@ int ZipHandler::Unzipper::m_ReadCurrentFile(char *fileBuffer, unsigned int fileB
     return filePortionSize;
 }
 
-void ZipHandler::Unzipper::m_RemoveFiles()
+void ZipHandler::Unzipper::RemoveFiles()
 {
     if (!m_unzipPath.isEmpty())
     {
+        m_Close();
         QFile file(m_unzipPath);
         file.remove();
         m_unzipPath = "";
@@ -230,9 +242,12 @@ QString ZipHandler::Unzipper::Unzip()
     if (!m_noErrors) return "";
 
     m_Open(m_zipPath);
-    m_unzipPath = m_GenerateTempFileName();
+    if (m_unzipPath.isEmpty())
+    {
+        m_unzipPath = m_GenerateTempFileName();
+    }
     QFile unzipFile(m_unzipPath);
-    if (!unzipFile.open(QIODevice::WriteOnly))
+    if (!unzipFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
     {
         std::cerr << "Failed to create a working file.\n";
         m_Close();
@@ -297,7 +312,10 @@ QString ZipHandler::Unzipper::Unzip()
 bool ZipHandler::Unzipper::FindFile(const QString &path)
 {
     if (!m_noErrors) return false;
-    if (!m_Open(m_zipPath)) return false;
+    if (!m_zipIsOpen)
+    {
+        m_Open(m_zipPath);
+    }
 
     constexpr unsigned int nameBufferSize = 1024;
     char nameBuffer[nameBufferSize];
@@ -318,4 +336,38 @@ bool ZipHandler::Unzipper::FindFile(const QString &path)
     while (m_GoToNextFile());
     m_Close();
     return false;
+}
+
+bool ZipHandler::Unzipper::GetFilesInDirectory(const QString &directoryPath, std::vector<QString> &buffer)
+{
+    if (!m_noErrors) return false;
+    if (!m_Open(m_zipPath)) return false;
+
+    constexpr unsigned int nameBufferSize = 1024;
+    char nameBuffer[nameBufferSize];
+
+    if (!m_GoToFirstFile()) return false;
+    unz_file_info fileInfo;
+    QString name;
+    do
+    {
+        if (!m_GetCurrentFileInfo(&fileInfo, nameBuffer, nameBufferSize))
+        {
+            return false;
+        }
+        name = QString(nameBuffer);
+        if (!name.startsWith(directoryPath)) continue;
+        if (name == directoryPath) continue;
+
+        name.replace(directoryPath, "");
+        if (name.back() == '/')
+        {
+            name.removeLast();
+        }
+        if (name.contains('/')) continue;
+        buffer.push_back(name);
+    }
+    while (m_GoToNextFile());
+    m_Close();
+    return true;
 }

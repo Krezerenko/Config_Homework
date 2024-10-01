@@ -7,7 +7,6 @@
 
 int main(int argc, char *argv[])
 {
-    srand(time(nullptr));
     if (argc < 5)
     {
         std::cerr << "Wrong amount of arguments.\n"
@@ -20,17 +19,16 @@ int main(int argc, char *argv[])
         return 1;
     }
     QApplication a(argc, argv);
-    ZipHandler zip(argv[3]);
-    std::cout << zip.WriteToFile() << '\n';
-//    std::cout << zip.Unzip().toStdString() + '\n';
-//    CommandHandler cmd(argc, argv);
-    MainWindow w;
+//    ZipHandler zip(argv[3]);
+//    std::cout << zip.WriteToFile("some/stupid/file", "lol\n") << '\n';
+    CommandHandler cmd(argc, argv);
+    MainWindow w(nullptr, &cmd);
     auto ui = w.GetUi();
-//    QObject::connect(ui->btnCd, &QPushButton::clicked, &w, &MainWindow::HandleCdButtonPressed);
-//    QObject::connect(&cmd, &CommandHandler::OnCurrentPathChanged, ui->txtCurrentFolder, &QLineEdit::setText);
-//    QObject::connect(ui->btnLs, &QPushButton::clicked, &w, &MainWindow::HandleLsButtonPressed);
+    QObject::connect(ui->btnCd, &QPushButton::clicked, &w, &MainWindow::HandleCdButtonPressed);
+    QObject::connect(&cmd, &CommandHandler::OnCurrentPathChanged, ui->txtCurrentFolder, &QLineEdit::setText);
+    QObject::connect(ui->btnLs, &QPushButton::clicked, &w, &MainWindow::HandleLsButtonPressed);
 //    QObject::connect(&a, &QApplication::aboutToQuit, &cmd, &CommandHandler::CleanUp);
     w.show();
-//    cmd.InitUi();
+    cmd.InitUi();
     return a.exec();
 }
