@@ -4,7 +4,7 @@
 #include "ZipHandler.h"
 #include <QRegularExpression>
 
-CommandHandler::CommandHandler(int argc, char *argv[]) : m_zip(QString::fromLatin1(argv[3]))
+CommandHandler::CommandHandler(int argc, char *argv[]) : m_zip(QString(argv[3]))
 {
     m_userName = argv[1];
     m_computerName = argv[2];

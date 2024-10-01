@@ -324,7 +324,7 @@ bool ZipHandler::Unzipper::FindFile(const QString &filePath)
         {
             return false;
         }
-        if (QString::fromLatin1(nameBuffer) == filePath)
+        if (QString::fromUtf8(nameBuffer) == filePath)
         {
             return true;
         }
@@ -351,7 +351,7 @@ bool ZipHandler::Unzipper::GetFilesInDirectory(const QString &directoryPath, std
         {
             return false;
         }
-        name = QString::fromLatin1(nameBuffer);
+        name = QString::fromUtf8(nameBuffer);
         if (!name.startsWith(directoryPath)) continue;
         if (name == directoryPath) continue;
 
@@ -386,7 +386,7 @@ QString ZipHandler::Unzipper::ReadFile(const QString &filePath)
             return "";
         }
 
-        name = QString::fromLatin1(nameBuffer);
+        name = QString::fromUtf8(nameBuffer);
         if (name != filePath) continue;
 
         constexpr unsigned int fileBufferSize = 1024 * 8;
@@ -403,7 +403,7 @@ QString ZipHandler::Unzipper::ReadFile(const QString &filePath)
                 return fileData;
             }
 
-            fileData += QString::fromLatin1(fileBuffer, filePortionSize);
+            fileData += QString::fromUtf8(fileBuffer, filePortionSize);
         }
         while (filePortionSize > 0);
 

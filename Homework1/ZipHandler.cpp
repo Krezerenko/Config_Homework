@@ -134,12 +134,15 @@ bool ZipHandler::AddFile(const QString &fileName)
     m_zipCopyPath = m_pZipper->ZipNoChange(m_unzipPath);
     m_noErrors = m_zipCopyPath != "";
     if (!m_noErrors) return false;
-//    m_ReplaceOriginal();
-//    return m_noErrors;
 
     QString parentPath = fileName;
     if (parentPath.back() != '/') parentPath += '/';
     static QRegularExpression regexp("[^/]*/$", QRegularExpression::MultilineOption);
+    if (!m_pUnzipper->FindFile(fileName))
+    {
+        m_pZipper->ZipAddFileNoCheck(fileName, nullptr, 0);
+    }
+    parentPath.replace(regexp, "");
     while (parentPath != "")
     {
         if (!m_pUnzipper->FindFile(parentPath))

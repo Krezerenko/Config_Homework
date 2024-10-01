@@ -213,7 +213,7 @@ bool ZipHandler::Zipper::m_FillCurrentZip(QFile &source)
             return true;
         }
         source.read(nameBuffer, nameSize);
-        name = QString::fromLatin1(nameBuffer, nameSize);
+        name = QString::fromUtf8(nameBuffer, nameSize);
 
         if (!m_AppendFileToCurrentZipFromUnzip(source, name, fileBuffer, fileBufferSize))
         {
@@ -241,7 +241,7 @@ bool ZipHandler::Zipper::m_FillCurrentZipExceptFile(QFile &source, const QString
             return true;
         }
         source.read(nameBuffer, nameSize);
-        name = QString::fromLatin1(nameBuffer, nameSize);
+        name = QString::fromUtf8(nameBuffer, nameSize);
 
         if (fileName == name)
         {
@@ -277,7 +277,7 @@ bool ZipHandler::Zipper::m_FillCurrentZipAndAppendToFile(QFile &source, const QS
             return true;
         }
         source.read(nameBuffer, nameSize);
-        name = QString::fromLatin1(nameBuffer, nameSize);
+        name = QString::fromUtf8(nameBuffer, nameSize);
 
         if (fileName == name)
         {
