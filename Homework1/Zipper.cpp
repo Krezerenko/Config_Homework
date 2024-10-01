@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include <QFile>
-#include <vector>
 
 ZipHandler::Zipper::Zipper()
 {
@@ -17,7 +16,7 @@ ZipHandler::Zipper::Zipper()
 ZipHandler::Zipper::~Zipper()
 {
     m_Close();
-    m_RemoveFiles();
+    RemoveFiles();
 }
 
 bool ZipHandler::Zipper::m_CreateAndOpen()
@@ -140,7 +139,7 @@ bool ZipHandler::Zipper::m_CloseCurrentFile()
     return true;
 }
 
-bool ZipHandler::Zipper::m_WriteInCurrentFile(char *fileBuffer, unsigned int fileBufferSize)
+bool ZipHandler::Zipper::m_WriteInCurrentFile(const char *fileBuffer, unsigned int fileBufferSize)
 {
     if (!m_noErrors) return false;
     if (!m_zipIsOpen)
@@ -165,12 +164,132 @@ bool ZipHandler::Zipper::m_WriteInCurrentFile(char *fileBuffer, unsigned int fil
     return true;
 }
 
-bool ZipHandler::Zipper::m_AppendFileToCurrentZip(QFile & source, const QString &filename, char *fileBuffer, unsigned int fileBufferSize)
+bool ZipHandler::Zipper::m_WriteInCurrentFileFromUnzip(QFile &source, char *fileBuffer, unsigned int fileBufferSize)
 {
+    if (!m_noErrors) return false;
 
+    unsigned int filePortionSize;
+    unsigned long fileSize;
+
+    source.read(reinterpret_cast<char*>(&fileSize), FileLenSize);
+    filePortionSize = fileSize;
+    while (filePortionSize > fileBufferSize)
+    {
+        source.read(fileBuffer, fileBufferSize);
+        m_WriteInCurrentFile(fileBuffer, fileBufferSize);
+        filePortionSize -= fileBufferSize;
+    }
+    source.read(fileBuffer, filePortionSize);
+    m_WriteInCurrentFile(fileBuffer, filePortionSize);
+
+    return true;
 }
 
-void ZipHandler::Zipper::m_RemoveFiles()
+bool ZipHandler::Zipper::m_AppendFileToCurrentZipFromUnzip(QFile &source, const QString &filename, char *fileBuffer,
+                                                           unsigned int fileBufferSize)
+{
+    if (!m_OpenNewFile(filename)) return false;
+
+    m_WriteInCurrentFileFromUnzip(source, fileBuffer, fileBufferSize);
+
+    return m_CloseCurrentFile();
+}
+
+bool ZipHandler::Zipper::m_FillCurrentZip(QFile &source)
+{
+    constexpr unsigned int nameBufferSize = 1024;
+    constexpr unsigned int fileBufferSize = 1024 * 8;
+    char nameBuffer[nameBufferSize];
+    char fileBuffer[fileBufferSize];
+    unsigned int nameSize;
+
+    QString name;
+    do
+    {
+        source.read(reinterpret_cast<char*>(&nameSize), NameLenSize);
+        source.read(nameBuffer, nameSize);
+        name = QString::fromLatin1(nameBuffer, nameSize);
+
+        if (!m_AppendFileToCurrentZipFromUnzip(source, name, fileBuffer, fileBufferSize))
+        {
+            return false;
+        }
+    }
+    while (!source.atEnd());
+    return true;
+}
+
+bool ZipHandler::Zipper::m_FillCurrentZipExceptFile(QFile &source, const QString &fileName)
+{
+    constexpr unsigned int nameBufferSize = 1024;
+    constexpr unsigned int fileBufferSize = 1024 * 8;
+    char nameBuffer[nameBufferSize];
+    char fileBuffer[fileBufferSize];
+    unsigned int nameSize;
+
+    QString name;
+    do
+    {
+        source.read(reinterpret_cast<char*>(&nameSize), NameLenSize);
+        source.read(nameBuffer, nameSize);
+        name = QString::fromLatin1(nameBuffer, nameSize);
+
+        if (fileName == name)
+        {
+            unsigned long fileSize;
+            source.read(reinterpret_cast<char*>(&fileSize), FileLenSize);
+            source.seek(source.pos() + fileSize);
+            continue;
+        }
+        if (!m_AppendFileToCurrentZipFromUnzip(source, name, fileBuffer, fileBufferSize))
+        {
+            return false;
+        }
+    }
+    while (!source.atEnd());
+    return true;
+}
+
+bool ZipHandler::Zipper::m_FillCurrentZipAndAppendToFile(QFile &source, const QString &fileName, const char *data,
+                                                         unsigned int dataSize)
+{
+    constexpr unsigned int nameBufferSize = 1024;
+    constexpr unsigned int fileBufferSize = 1024 * 8;
+    char nameBuffer[nameBufferSize];
+    char fileBuffer[fileBufferSize];
+    unsigned int nameSize;
+
+    QString name;
+    do
+    {
+        source.read(reinterpret_cast<char*>(&nameSize), NameLenSize);
+        source.read(nameBuffer, nameSize);
+        name = QString::fromLatin1(nameBuffer, nameSize);
+
+        if (fileName == name)
+        {
+            m_OpenNewFile(name);
+
+            if (!m_WriteInCurrentFileFromUnzip(source, fileBuffer, fileBufferSize))
+            {
+                return false;
+            }
+            m_WriteInCurrentFile(data, dataSize);
+
+            m_CloseCurrentFile();
+            continue;
+        }
+
+        if (!m_AppendFileToCurrentZipFromUnzip(source, name, fileBuffer, fileBufferSize))
+        {
+            return false;
+        }
+    }
+    while (!source.atEnd());
+    return true;
+}
+
+void ZipHandler::Zipper::RemoveFiles()
 {
     if (!m_unzipPath.isEmpty())
     {
@@ -180,6 +299,7 @@ void ZipHandler::Zipper::m_RemoveFiles()
     }
     if (!m_zipCopyPath.isEmpty())
     {
+        m_Close();
         QFile file(m_zipCopyPath);
         file.remove();
         m_zipCopyPath = "";
@@ -189,6 +309,7 @@ void ZipHandler::Zipper::m_RemoveFiles()
 QString ZipHandler::Zipper::ZipNoChange(const QString &unzipPath)
 {
     m_CreateAndOpen();
+
     QFile unzipFile(unzipPath);
     if (!unzipFile.open(QIODevice::ReadOnly))
     {
@@ -199,38 +320,77 @@ QString ZipHandler::Zipper::ZipNoChange(const QString &unzipPath)
         return "";
     }
 
-    constexpr unsigned int nameBufferSize = 1024;
-    constexpr unsigned int fileBufferSize = 1024 * 8;
-    char nameBuffer[nameBufferSize];
-    char fileBuffer[fileBufferSize];
-    unsigned int nameSize;
-    unsigned int filePortionSize;
-    unsigned long fileSize;
-    QString name;
-    do
-    {
-        unzipFile.read(reinterpret_cast<char*>(&nameSize), NameLenSize);
-        unzipFile.read(nameBuffer, nameSize);
-        name = QString::fromLatin1(nameBuffer, nameSize);
+    m_FillCurrentZip(unzipFile);
 
-        m_OpenNewFile(name);
-
-        unzipFile.read(reinterpret_cast<char*>(&fileSize), FileLenSize);
-        filePortionSize = fileSize;
-        while (filePortionSize > fileBufferSize)
-        {
-            unzipFile.read(fileBuffer, fileBufferSize);
-            m_WriteInCurrentFile(fileBuffer, fileBufferSize);
-            filePortionSize -= fileBufferSize;
-        }
-        unzipFile.read(fileBuffer, filePortionSize);
-        m_WriteInCurrentFile(fileBuffer, filePortionSize);
-
-        m_CloseCurrentFile();
-    }
-    while (!unzipFile.atEnd());
     m_Close();
     return m_zipCopyPath;
 }
 
+QString ZipHandler::Zipper::ZipAddNewFileRaw(const QString &unzipPath, const QString &fileName, const char *fileData,
+                                             unsigned int fileSize)
+{
+    m_CreateAndOpen();
 
+    QFile unzipFile(unzipPath);
+    if (!unzipFile.open(QIODevice::ReadOnly))
+    {
+        std::cerr << "Failed to open unzipped archive file.\n";
+        m_Close();
+        unzipFile.close();
+        m_noErrors = false;
+        return "";
+    }
+
+    m_FillCurrentZipExceptFile(unzipFile, fileName);
+
+    m_OpenNewFile(fileName);
+    if (fileData != nullptr && fileSize > 0)
+    {
+        m_WriteInCurrentFile(fileData, fileSize);
+    }
+    m_CloseCurrentFile();
+
+    m_Close();
+    return m_zipCopyPath;
+}
+
+QString ZipHandler::Zipper::ZipWriteToFileRaw(const QString &unzipPath, const QString &fileName, const char *fileData,
+                                              unsigned int fileSize)
+{
+    m_CreateAndOpen();
+
+    QFile unzipFile(unzipPath);
+    if (!unzipFile.open(QIODevice::ReadOnly))
+    {
+        std::cerr << "Failed to open unzipped archive file.\n";
+        m_Close();
+        unzipFile.close();
+        m_noErrors = false;
+        return "";
+    }
+
+    m_FillCurrentZipAndAppendToFile(unzipFile, fileName, fileData, fileSize);
+
+    m_Close();
+    return m_zipCopyPath;
+}
+
+QString ZipHandler::Zipper::ZipRemoveFile(const QString &unzipPath, const QString &fileName)
+{
+    m_CreateAndOpen();
+
+    QFile unzipFile(unzipPath);
+    if (!unzipFile.open(QIODevice::ReadOnly))
+    {
+        std::cerr << "Failed to open unzipped archive file.\n";
+        m_Close();
+        unzipFile.close();
+        m_noErrors = false;
+        return "";
+    }
+
+    m_FillCurrentZipExceptFile(unzipFile, fileName);
+
+    m_Close();
+    return m_zipCopyPath;
+}
