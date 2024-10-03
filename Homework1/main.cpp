@@ -34,6 +34,9 @@ int main(int argc, char *argv[])
     QObject::connect(ui->btnHistory, &QPushButton::clicked, &w, &MainWindow::HandleHistoryButtonPressed);
     QObject::connect(&w, &MainWindow::OnHistoryButtonPressed, &cmd, &CommandHandler::HandleHistoryButtonPressed);
 
+    QObject::connect(ui->btnCat, &QPushButton::clicked, &w, &MainWindow::HandleCatButtonPressed);
+    QObject::connect(&w, &MainWindow::OnCatButtonPressed, &cmd, &CommandHandler::HandleCatButtonPressed);
+
     QObject::connect(ui->btnRev, &QPushButton::clicked, &w, &MainWindow::HandleRevButtonPressed);
     QObject::connect(&w, &MainWindow::OnRevButtonPressed, &cmd, &CommandHandler::HandleRevButtonPressed);
 

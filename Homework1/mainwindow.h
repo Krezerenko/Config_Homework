@@ -29,12 +29,14 @@ public slots:
     void HandleCdButtonPressed();
     void HandleLsButtonPressed();
     void HandleHistoryButtonPressed();
+    void HandleCatButtonPressed();
     void HandleRevButtonPressed();
 
 signals:
     void OnCdButtonPressed(const QString &inputPath);
     void OnLsButtonPressed(const QString &inputPath);
     void OnHistoryButtonPressed();
+    void OnCatButtonPressed(const QString &inputPath);
     void OnRevButtonPressed(const QString &inputPath);
 
 private:

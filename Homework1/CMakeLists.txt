@@ -11,20 +11,15 @@ list(APPEND CMAKE_PREFIX_PATH "E:/.vcpkg-clion/vcpkg/packages")
 list(APPEND CMAKE_PREFIX_PATH "E:/.vcpkg-clion/vcpkg/packages/bzip2_x64-mingw-dynamic")
 list(APPEND CMAKE_PREFIX_PATH "E:/.vcpkg-clion/vcpkg/packages/minizip-ng_x64-mingw-dynamic")
 list(APPEND CMAKE_PREFIX_PATH "E:/.vcpkg-clion/vcpkg/packages/zstd_x64-mingw-dynamic")
-#include("E:\\.vcpkg-clion\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake")
 
 find_package(Qt6 COMPONENTS
         Core
-#        Core5Compat
         Gui
         Widgets
         REQUIRED)
-#find_package(Qt6Core5Compat REQUIRED)
 find_package(libzip CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(minizip-ng CONFIG REQUIRED)
-#find_package(QuaZip-Qt5 REQUIRED)
-#find_package(KF5Archive CONFIG REQUIRED)
 
 add_executable(Homework1 main.cpp
         CommandHandler.cpp
@@ -43,9 +38,8 @@ target_link_libraries(Homework1 PRIVATE
         Qt::Core
         Qt::Gui
         Qt::Widgets
-        libzip::zip
         unofficial::minizip::minizip
-        MINIZIP::minizip-ng
+#        MINIZIP::minizip-ng
 )
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)

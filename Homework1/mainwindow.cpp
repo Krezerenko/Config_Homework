@@ -44,6 +44,11 @@ void MainWindow::HandleHistoryButtonPressed()
     emit OnHistoryButtonPressed();
 }
 
+void MainWindow::HandleCatButtonPressed()
+{
+    emit OnCatButtonPressed(m_ui->txtCatFilePath->text());
+}
+
 void MainWindow::HandleRevButtonPressed()
 {
     emit OnRevButtonPressed(m_ui->txtRevFilePath->text());

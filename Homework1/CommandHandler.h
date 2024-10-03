@@ -35,8 +35,9 @@ public:
     void InitUi();
     void SetCurrentPath(const QString& path);
 
-    QString ls(const QString &path);
+    void ls(const QString &path);
     void cd(const QString &path);
+    void cat(const QString &input);
     void rev(const QString &filePath);
     void history();
 
@@ -45,6 +46,7 @@ public slots:
     void HandleLsButtonPressed(const QString &inputPath);
     void HandleCdButtonPressed(const QString &inputPath);
     void HandleHistoryButtonPressed();
+    void HandleCatButtonPressed(const QString &inputPath);
     void HandleRevButtonPressed(const QString &inputPath);
 
 signals:

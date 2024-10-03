@@ -107,7 +107,7 @@ void CommandHandler::CmdLog(const QString &cmd)
     m_zip.WriteToFile(m_cmdLogPath, cmd + '\n');
 }
 
-QString CommandHandler::ls(const QString &path)
+void CommandHandler::ls(const QString &path)
 {
     CmdLog("ls " + path);
 
@@ -118,10 +118,9 @@ QString CommandHandler::ls(const QString &path)
     QString output;
     for (const QString& name : names)
     {
-        std::cout << name.toStdString() << '\n';
         output += name + '\n';
     }
-    return output;
+    emit OnOutput(output);
 }
 
 void CommandHandler::cd(const QString &path)
@@ -135,6 +134,59 @@ void CommandHandler::cd(const QString &path)
     }
     Log("Changed location to folder /" + zipPath);
     SetCurrentPath(zipPath);
+}
+
+void CommandHandler::cat(const QString &input)
+{
+    CmdLog("cat " + input);
+    QVector<QString> paths;
+    QString currentPath = "";
+    unsigned int quoteCount = 0;
+    for (int i = 0; i < input.size(); ++i)
+    {
+        if (input[i] == '\"')
+        {
+            if (!(++quoteCount % 2))
+            {
+                paths += currentPath;
+                currentPath.clear();
+            }
+            continue;
+        }
+        if (input[i] == ' ' && !(quoteCount % 2))
+        {
+            if (currentPath.isEmpty()) continue;
+            paths += currentPath;
+            currentPath.clear();
+            continue;
+        }
+        currentPath += input[i];
+    }
+    paths += currentPath;
+
+    QString output;
+    for (const QString &path : paths)
+    {
+        QString zipPath = ToZipPath(path);
+        if (input == "" || input.back() == '/' && m_zip.FindFile(zipPath))
+        {
+            Log("Cat failed: \"" + zipPath + "\" is not a file.");
+            continue;
+        }
+        if (!m_zip.FindFile(zipPath.removeLast()))
+        {
+            Log("Cat failed: \"" + zipPath + "\" - file not found.");
+            continue;
+        }
+        QString data = m_zip.ReadFile(zipPath);
+        if (data.size() == 0)
+        {
+            continue;
+        }
+        output += data;
+    }
+
+    emit OnOutput(output);
 }
 
 void CommandHandler::exit()
@@ -182,8 +234,7 @@ void CommandHandler::rev(const QString &filePath)
 
 void CommandHandler::HandleLsButtonPressed(const QString &inputPath)
 {
-    QString names = ls(inputPath);
-    emit OnOutput(names);
+    ls(inputPath);
 }
 
 void CommandHandler::HandleCdButtonPressed(const QString &inputPath)
@@ -194,6 +245,11 @@ void CommandHandler::HandleCdButtonPressed(const QString &inputPath)
 void CommandHandler::HandleHistoryButtonPressed()
 {
     history();
+}
+
+void CommandHandler::HandleCatButtonPressed(const QString &inputPath)
+{
+    cat(inputPath);
 }
 
 void CommandHandler::HandleRevButtonPressed(const QString &inputPath)
