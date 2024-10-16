@@ -1,0 +1,5 @@
+<config>
+    <repo_path>https://github.com/Krezerenko/Config_Homework/</repo_path>
+    <output_file>out.mmd</output_file>
+    <visualizer_path>"C:\Program Files\Google\Chrome\Application\chrome.exe"</visualizer_path>
+</config>
