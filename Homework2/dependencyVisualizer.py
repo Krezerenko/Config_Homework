@@ -4,23 +4,6 @@ import subprocess
 import requests
 import json
 
-# def get_directory_contents(owner, repo, path="", branch="main"):
-#     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}"
-#     response = requests.get(url)
-#     response.raise_for_status()
-#     contents = response.json()
-#     return contents
-
-# def get_files_recursive(owner, repo, path="", branch="main"):
-#     files = []
-#     contents = get_directory_contents(owner, repo, path, branch)
-#     for item in contents:
-#         if item["type"] == "file":
-#             files.append(item)
-#         elif item["type"] == "dir":
-#             files.extend(get_files_recursive(owner, repo, item["path"], branch))
-#     return files
-
 def get_input(config_file):
     try:
         tree = ET.parse(config_file)
@@ -71,10 +54,6 @@ def get_branches(owner, repo):
         print(f"Произошла ошибка: {e}")
 
 
-# with (open("files.json", "w")) as f:
-#     files = get_files_recursive(ownerName, repoName)
-#     json.dump(files, f)
-
 def write_all_commits(owner, repo):
     global out, commits
     with open("commits.json", "w") as out:
@@ -92,8 +71,6 @@ if __name__ == '__main__':
 
     with open("commits.json", "r") as f:
         commits = json.load(f)
-        # for commit in commits:
-        #     print(commit["commit"]["message"])
         mermaid_code = "graph TD\n"
         for commit in commits:
             message = commit["commit"]["message"].replace("\n", " ").replace("\"", "'")
@@ -106,9 +83,4 @@ if __name__ == '__main__':
             out.write(mermaid_code)
         subprocess.check_output(f"wsl /home/krezon/node_modules/.bin/mmdc -i /mnt/e/Config_Homework/Homework2/{outputFile} -o /mnt/e/Config_Homework/Homework2/output.svg", shell=True).decode("utf-8")
         subprocess.run(f"{visualizerPath} file:/E:/Config_Homework/Homework2/output.svg", shell = True)
-
-# with open("files.json", "r") as f:
-#     files = json.load(f)
-#     for file in files:
-#         print(file["path"])
 
