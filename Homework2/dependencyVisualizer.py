@@ -63,7 +63,6 @@ def write_all_commits(owner, repo):
         json.dump(commits, out)
 
 if __name__ == '__main__':
-
     repoPath, outputFile, visualizerPath = get_input("config.xml")
     ownerName, repoName = get_repo_info(repoPath)
 
