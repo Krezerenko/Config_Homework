@@ -1,4 +1,5 @@
 import math
+import sys
 
 from lark import Lark, Transformer
 
@@ -22,7 +23,7 @@ operation: plus | min | sqrt
 constexpr: "@(" operand ")"
 assignable: NUM | constexpr | dict
 translation: assignable "->" NAME
-line: (translation | dict) ";"
+line: (translation) ";"
 
 start: line*
 '''
@@ -77,14 +78,19 @@ class LearnTree(Transformer):
     def start(self, lines):
         return '{' + ", ".join(lines) + '}'
 
+def main():
+    learn_parser = Lark(G)
+    if len(sys.argv) < 2:
+        print("Предоставьте текст на учебном языке.")
+        return
+    ex = sys.argv[1]
+    ex = ex.replace(r"\n", "\n")
+    result = LearnTree().transform(learn_parser.parse(ex))
+    if len(sys.argv) == 2:
+        print(result)
+        return
+    with open(sys.argv[2], 'w') as f:
+        f.write(result)
 
-learn_parser = Lark(G)
-ex = r'''
-7 -> Test1;
-@(+ Test1 1) -> Test2;
-3.14519 -> Good;
-$[Car : @(+ min() 7 sqrt() 2.5 Good), Wheels : @(Car)] -> Bad;
-$[];
-'''
-
-print(LearnTree().transform(learn_parser.parse(ex)))
+if __name__ == '__main__':
+    main()

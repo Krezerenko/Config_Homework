@@ -1,0 +1,12 @@
+{
+    "Nice" : 12.0,
+    "Good" : 7.0,
+    "Empty" : {},
+    "Grand" : {
+        "Bad" : {
+            "VeryBad" : 7.0,
+            "OhNo" : 9.0
+        },
+        "Okay" : 31.0
+    }
+}
