@@ -1,7 +1,8 @@
+#include "Interpreter.h"
+
 #include <iostream>
 
-int main()
+int main(int argc, char** argv)
 {
-    std::cout << "Hello, World!" << '\n';
-    return 0;
+    return Interpreter::Execute(argv[1], argv[2]);
 }

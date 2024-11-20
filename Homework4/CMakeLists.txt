@@ -5,7 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(int int.cpp
         Interpreter.cpp
-        Interpreter.h)
+        Interpreter.h
+        Global.h)
 add_executable(asm asm.cpp
         Assembler.cpp
-        Assembler.h)
+        Assembler.h
+        Global.h)

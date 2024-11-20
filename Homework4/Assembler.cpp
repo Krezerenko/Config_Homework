@@ -12,7 +12,7 @@ int Assembler::Compile(const std::string& scriptPath, const std::string& outPath
     if (!source)
     {
         std::cerr << "Couldn't locate file on path \"" + scriptPath + "\".\n";
-        return 1;
+        return 2;
     }
     std::ofstream out(outPath, std::ios::trunc | std::ios::binary);
 
@@ -27,11 +27,11 @@ int Assembler::Compile(const std::string& scriptPath, const std::string& outPath
         {
             out << CompileLine(words);
         }
-        catch(InvalidSyntax&)
+        catch(const InvalidSyntax&)
         {
             source.close();
             out.close();
-            return 2;
+            return 3;
         }
     }
 
@@ -69,7 +69,7 @@ void Assembler::ReadLine(const std::string &line, std::vector<std::string> &out)
 
 std::string Assembler::CompileLine(const std::vector<std::string> &tokens)
 {
-    std::bitset<MaxCommandSize> buffer;
+    std::bitset<MaxCommandSize> command;
     const std::string &name = tokens[0];
     if (name == "ldc")
     {
@@ -78,10 +78,10 @@ std::string Assembler::CompileLine(const std::vector<std::string> &tokens)
             WrongCommandArgumentsMessage("ror", 2, tokens.size() - 1);
             throw InvalidSyntax();
         }
-        ConvertInt(26, buffer, 0, 5);
-        ConvertInt(std::stoi(tokens[1]), buffer, 5, 24);
-        ConvertInt(std::stoi(tokens[2]), buffer, 24, 50);
-        return BitToByte(buffer, 7);
+        IntToBit(26, command, 0, 5);
+        IntToBit(std::stoi(tokens[1]), command, 5, 24);
+        IntToBit(std::stoi(tokens[2]), command, 24, 50);
+        return BitToByte(command, 7);
     }
     if (name == "rd")
     {
@@ -90,11 +90,11 @@ std::string Assembler::CompileLine(const std::vector<std::string> &tokens)
             WrongCommandArgumentsMessage("rd", 3, tokens.size() - 1);
             throw InvalidSyntax();
         }
-        ConvertInt(4, buffer, 0, 5);
-        ConvertInt(std::stoi(tokens[1]), buffer, 5, 19);
-        ConvertInt(std::stoi(tokens[2]), buffer, 19, 45);
-        ConvertInt(std::stoi(tokens[3]), buffer, 45, 71);
-        return BitToByte(buffer, 9);
+        IntToBit(4, command, 0, 5);
+        IntToBit(std::stoi(tokens[1]), command, 5, 19);
+        IntToBit(std::stoi(tokens[2]), command, 19, 45);
+        IntToBit(std::stoi(tokens[3]), command, 45, 71);
+        return BitToByte(command, 9);
     }
     if (name == "wr")
     {
@@ -103,10 +103,10 @@ std::string Assembler::CompileLine(const std::vector<std::string> &tokens)
             WrongCommandArgumentsMessage("wr", 2, tokens.size() - 1);
             throw InvalidSyntax();
         }
-        ConvertInt(27, buffer, 0, 5);
-        ConvertInt(std::stoi(tokens[1]), buffer, 5, 31);
-        ConvertInt(std::stoi(tokens[2]), buffer, 31, 57);
-        return BitToByte(buffer, 8);
+        IntToBit(27, command, 0, 5);
+        IntToBit(std::stoi(tokens[1]), command, 5, 31);
+        IntToBit(std::stoi(tokens[2]), command, 31, 57);
+        return BitToByte(command, 8);
     }
     if (name == "ror")
     {
@@ -115,39 +115,39 @@ std::string Assembler::CompileLine(const std::vector<std::string> &tokens)
             WrongCommandArgumentsMessage("ror", 4, tokens.size() - 1);
             throw InvalidSyntax();
         }
-        ConvertInt(10, buffer, 0, 5);
-        ConvertInt(std::stoi(tokens[1]), buffer, 5, 31);
-        ConvertInt(std::stoi(tokens[2]), buffer, 31, 57);
-        ConvertInt(std::stoi(tokens[3]), buffer, 57, 71);
-        ConvertInt(std::stoi(tokens[4]), buffer, 71, 97);
-        return BitToByte(buffer, 13);
+        IntToBit(10, command, 0, 5);
+        IntToBit(std::stoi(tokens[1]), command, 5, 31);
+        IntToBit(std::stoi(tokens[2]), command, 31, 57);
+        IntToBit(std::stoi(tokens[3]), command, 57, 71);
+        IntToBit(std::stoi(tokens[4]), command, 71, 97);
+        return BitToByte(command, 13);
     }
 
     std::cerr << "Syntax error: \"" + name + "\" - no such command.\n";
     throw InvalidSyntax();
 }
 
-void Assembler::ConvertInt(unsigned int num, std::bitset<MaxCommandSize> &buffer, unsigned int start, unsigned int end)
+void Assembler::IntToBit(unsigned int num, std::bitset<MaxCommandSize> &command, unsigned int start, unsigned int end)
 {
     unsigned int size = end - start;
 
-    std::bitset<MaxCommandSize> bufferCopy = buffer;
+    std::bitset<MaxCommandSize> buffer = command;
     std::bitset<MaxCommandSize> mask;
     unsigned int ones = ~0;
     mask |= (ones % (1 << size));
     mask <<= MaxCommandSize - end;
-    bufferCopy |= num;
-    bufferCopy <<= MaxCommandSize - end;
-    bufferCopy &= mask;
-    buffer |= bufferCopy;
+    buffer |= num;
+    buffer <<= MaxCommandSize - end;
+    buffer &= mask;
+    command |= buffer;
 }
 
-std::string Assembler::BitToByte(std::bitset<MaxCommandSize> bits, unsigned int byteSize)
+std::string Assembler::BitToByte(const std::bitset<MaxCommandSize> &bits, unsigned int byteSize)
 {
     std::string out(byteSize, '\0');
     for (int i = 0; i < byteSize; ++i)
     {
-        out[i] = *(reinterpret_cast<char*>(&bits) + MaxCommandSizeBytes - i - 1);
+        out[i] = *(reinterpret_cast<const char*>(&bits) + MaxCommandSizeBytes - i - 1);
     }
     return out;
 }
