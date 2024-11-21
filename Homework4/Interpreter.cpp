@@ -2,31 +2,84 @@
 
 #include <fstream>
 #include <iostream>
+#include <tinyxml2.h>
+#include <sstream>
 
-int Interpreter::Execute(const std::string &codePath, const std::string &outPath)
+Interpreter::Interpreter()
+{
+    m_memory = new unsigned char[MemorySize];
+}
+
+Interpreter::~Interpreter()
+{
+    delete[] m_memory;
+}
+
+int Interpreter::Execute(const std::string &codePath, const std::string &outPath, unsigned int outputStart,
+                         unsigned int outputEnd)
 {
     std::ifstream code(codePath, std::ios::binary | std::ios::in);
+    if (!code)
+    {
+        std::cerr << "Couldn't locate file on path \"" + codePath + "\".\n";
+        return 2;
+    }
+    if (outputEnd > MemorySize)
+    {
+        std::cerr << "End address exceeds virtual memory capacity.\n";
+        return 2;
+    }
     std::bitset<MaxCommandSize> command;
     std::vector<unsigned int> operands;
     try
     {
         while(ReadCommand(code, command))
         {
-            std::cout << command << '\n';
+//            std::cout << command << '\n';
             ConvertCommand(command, operands);
             command.reset();
-            for (unsigned int op : operands)
+//            for (unsigned int op : operands)
+//            {
+//                std::cout << op << ' ';
+//            }
+//            std::cout << '\n';
+            switch (operands[0])
             {
-                std::cout << op << ' ';
+                case 26:
+                    mem_i(operands[2]) = operands[1];
+                    break;
+                case 4:
+                    m_memory[operands[3]] = m_memory[operands[2] + operands[1]];
+                    break;
+                case 27:
+                    m_memory[operands[2]] = m_memory[operands[1]];
+                    break;
+                case 10:
+                    mem_i(operands[2] + operands[3]) = (mem_i(operands[1]) >> mem_i(operands[4]) % (sizeof(int) * 8)) |
+                            (mem_i(operands[1]) << (sizeof(int) * 8 - mem_i(operands[4]) % (sizeof(int) * 8)));
+                    break;
             }
-            std::cout << '\n';
         }
     }
     catch (const ReadError&)
     {
         code.close();
-        return 2;
+        return 3;
     }
+
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLElement* root = doc.NewElement("root");
+    doc.InsertEndChild(root);
+    for (unsigned int i = outputStart; i < outputEnd; ++i)
+    {
+        tinyxml2::XMLElement* reg = doc.NewElement(("r" + std::to_string(i)).c_str());
+        std::stringstream converted;
+//        converted << std::converted << static_cast<unsigned int>(m_memory[i]);
+        converted << std::bitset<8>(m_memory[i]);
+        reg->SetText(converted.str().c_str());
+        root->InsertEndChild(reg);
+    }
+    doc.SaveFile(outPath.c_str());
     code.close();
     return 0;
 }
@@ -52,7 +105,7 @@ bool Interpreter::ReadCommand(std::ifstream &code, std::bitset<MaxCommandSize> &
             ReadBytes(code, command, 13);
             break;
         default:
-            std::cerr << "Read error: " + std::to_string(commandNum) + " - invalid commandNum.\n";
+            std::cerr << "Read error: " + std::to_string(commandNum) + " - invalid command number.\n";
             throw ReadError();
     }
     return true;

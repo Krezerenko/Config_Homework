@@ -11,8 +11,14 @@
 
 class Interpreter
 {
+    unsigned char* m_memory;
+    #define mem_i(addr) *reinterpret_cast<unsigned int*>(&m_memory[addr])
+
 public:
-    static int Execute(const std::string &codePath, const std::string &outPath);
+    Interpreter();
+    ~Interpreter();
+    int Execute(const std::string &codePath, const std::string &outPath, unsigned int outputStart,
+                unsigned int outputEnd);
 
 private:
     static bool ReadCommand(std::ifstream &code, std::bitset<MaxCommandSize> &command);

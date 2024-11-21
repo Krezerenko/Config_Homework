@@ -11,3 +11,9 @@ add_executable(asm asm.cpp
         Assembler.cpp
         Assembler.h
         Global.h)
+
+set(CMAKE_PREFIX_PATH "E:/.vcpkg-clion/vcpkg/packages")
+find_package(tinyxml2 CONFIG REQUIRED)
+
+target_link_libraries(int PRIVATE tinyxml2::tinyxml2)
+target_link_libraries(asm PRIVATE tinyxml2::tinyxml2)

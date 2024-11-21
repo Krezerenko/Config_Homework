@@ -5,16 +5,21 @@
 #include <iostream>
 #include <vector>
 #include <bitset>
+#include <tinyxml2.h>
 
-int Assembler::Compile(const std::string& scriptPath, const std::string& outPath)
+int Assembler::Compile(const std::string &sourcePath, const std::string &binPath, const std::string &logPath)
 {
-    std::ifstream source(scriptPath);
+    std::ifstream source(sourcePath);
     if (!source)
     {
-        std::cerr << "Couldn't locate file on path \"" + scriptPath + "\".\n";
+        std::cerr << "Couldn't locate file on path \"" + sourcePath + "\".\n";
         return 2;
     }
-    std::ofstream out(outPath, std::ios::trunc | std::ios::binary);
+    std::ofstream bin(binPath, std::ios::trunc | std::ios::binary);
+
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLElement* root = doc.NewElement("root");
+    doc.InsertEndChild(root);
 
     std::string currentLine;
     while (std::getline(source, currentLine))
@@ -25,19 +30,58 @@ int Assembler::Compile(const std::string& scriptPath, const std::string& outPath
         if (words.empty()) continue;
         try
         {
-            out << CompileLine(words);
+            bin << CompileLine(words);
         }
         catch(const InvalidSyntax&)
         {
             source.close();
-            out.close();
+            bin.close();
             return 3;
         }
+        LogCommand(doc, root, words);
     }
 
+    if (!logPath.empty())
+    {
+        doc.SaveFile(logPath.c_str());
+    }
     source.close();
-    out.close();
+    bin.close();
     return 0;
+}
+
+void Assembler::LogCommand(tinyxml2::XMLDocument &doc, tinyxml2::XMLElement *root,
+                           const std::vector<std::string> &tokens)
+{
+    tinyxml2::XMLElement* command = doc.NewElement("command");
+    root->InsertEndChild(command);
+//    tinyxml2::XMLElement* cmdName = doc.NewElement("A");
+//    command->InsertEndChild(cmdName);
+    if (tokens[0] == "ldc")
+    {
+        command->SetAttribute("A", 26);
+    }
+    if (tokens[0] == "rd")
+    {
+        command->SetAttribute("A", 4);
+    }
+    if (tokens[0] == "wr")
+    {
+        command->SetAttribute("A", 27);
+    }
+    if (tokens[0] == "ror")
+    {
+        command->SetAttribute("A", 10);
+    }
+    for (int i = 1; i < tokens.size(); ++i)
+    {
+        char name[] = "A";
+        name[0] = 'A' + i;
+        command->SetAttribute(name, tokens[i].c_str());
+//        tinyxml2::XMLElement* token = doc.NewElement(name);
+//        token->SetText(tokens[i].c_str());
+//        command->InsertEndChild(token);
+    }
 }
 
 void Assembler::ReadLine(const std::string &line, std::vector<std::string> &out)
